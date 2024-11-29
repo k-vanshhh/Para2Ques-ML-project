@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Question & Answer Generator</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
+    <style>
+        .gradient-bg {
+            background: linear-gradient(-45deg, #1e3a8a, #3730a3, #4f46e5, #818cf8);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.07);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+        }
+
+        .glass-effect:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+            transition: all 0.3s ease;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: conic-gradient(#0000 10%, #ffffff);
+            -webkit-mask: radial-gradient(farthest-side,#0000 calc(100% - 8px),#000 0);
+            animation: spinner-animation 1s infinite linear;
+        }
+
+        @keyframes spinner-animation {
+            to {
+                transform: rotate(1turn);
+            }
+        }
+
+        .floating {
+            animation: floating 3s ease-in-out infinite;
+        }
+
+        @keyframes floating {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .input-field {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            border-radius: 0.5rem;
+            padding: 0.5rem 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: #818cf8;
+            box-shadow: 0 0 15px rgba(129, 140, 248, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .generate-btn {
+            background: linear-gradient(45deg, #4f46e5, #818cf8);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .generate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(79, 70, 229, 0.4);
+        }
+
+        .generate-btn:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                120deg,
+                transparent,
+                rgba(255, 255, 255, 0.2),
+                transparent
+            );
+            transition: 0.5s;
+        }
+
+        .generate-btn:hover:before {
+            left: 100%;
+        }
+
+        .question-card {
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.08);
+            margin-bottom: 1rem;
+            border-radius: 0.5rem;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: slideIn 0.5s ease forwards;
+        }
+
+        @keyframes slideIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .question-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .answer-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .answer-content.show {
+            max-height: 500px;
+            padding: 1.5rem;
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .range-slider {
+            appearance: none;
+            -webkit-appearance: none;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            outline: none;
+        }
+
+        .range-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #818cf8;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .range-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 0 10px rgba(129, 140, 248, 0.5);
+        }
+
+        .particle {
+            position: absolute;
+            pointer-events: none;
+            animation: particleAnimation 1s ease-out forwards;
+        }
+
+        @keyframes particleAnimation {
+            0% {
+                transform: translate(0, 0) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(var(--tx), var(--ty)) scale(0);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen text-white">
+    <div class="container mx-auto px-4 py-8">
+        <header class="text-center mb-12 animate__animated animate__fadeIn">
+            <h1 class="text-5xl font-bold mb-4 floating">AI Question & Answer Generator</h1>
+            <p class="text-xl text-indigo-200">Transform your text into interactive Q&A pairs</p>
+        </header>
+
+        <main class="max-w-4xl mx-auto">
+            <div class="glass-effect rounded-lg p-6 mb-8 animate__animated animate__fadeInUp">
+                <div class="mb-6">
+                    <label class="block text-sm font-medium mb-2 text-indigo-200">Your Text</label>
+                    <textarea 
+                        id="context" 
+                        class="input-field w-full h-48"
+                        placeholder="Enter your text here..."></textarea>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div class="animate__animated animate__fadeInLeft">
+                        <label class="block text-sm font-medium mb-2 text-indigo-200">Number of Questions</label>
+                        <input 
+                            type="number" 
+                            id="numQuestions" 
+                            value="5" 
+                            min="1" 
+                            max="10"
+                            class="input-field w-full">
+                    </div>
+                    <div class="animate__animated animate__fadeInUp">
+                        <label class="block text-sm font-medium mb-2 text-indigo-200">Creativity</label>
+                        <input 
+                            type="range" 
+                            id="temperature" 
+                            value="0.7" 
+                            min="0" 
+                            max="1" 
+                            step="0.1"
+                            class="range-slider w-full">
+                        <span class="text-sm mt-1 block text-center text-indigo-200">0.7</span>
+                    </div>
+                    <div class="animate__animated animate__fadeInRight">
+                        <label class="block text-sm font-medium mb-2 text-indigo-200">Max Length</label>
+                        <input 
+                            type="number" 
+                            id="maxLength" 
+                            value="50" 
+                            min="10" 
+                            max="100"
+                            class="input-field w-full">
+                    </div>
+                </div>
+
+                <button 
+                    id="generateBtn"
+                    class="generate-btn w-full text-white font-bold py-3 px-6 rounded-lg">
+                    Generate Q&A Pairs
+                </button>
+            </div>
+
+            <div id="loadingSpinner" class="hidden flex justify-center my-8">
+                <div class="loading-spinner"></div>
+            </div>
+
+            <div id="error" class="hidden animate__animated animate__shakeX bg-red-500 bg-opacity-20 text-white p-4 rounded-lg mb-8"></div>
+
+            <div id="results" class="space-y-4 hidden">
+                <!-- Q&A pairs will be inserted here -->
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Add particle effect on button click
+        function createParticles(x, y) {
+            for (let i = 0; i < 10; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = x + 'px';
+                particle.style.top = y + 'px';
+                particle.style.setProperty('--tx', (Math.random() - 0.5) * 200 + 'px');
+                particle.style.setProperty('--ty', (Math.random() - 0.5) * 200 + 'px');
+                particle.style.backgroundColor = `hsl(${Math.random() * 90 + 200}, 70%, 60%)`;
+                particle.style.width = '8px';
+                particle.style.height = '8px';
+                particle.style.borderRadius = '50%';
+                document.body.appendChild(particle);
+                setTimeout(() => particle.remove(), 1000);
+            }
+        }
+
+        document.getElementById('generateBtn').addEventListener('click', async (e) => {
+            // Add particle effect
+            createParticles(e.clientX, e.clientY);
+
+            const context = document.getElementById('context').value;
+            const numQuestions = document.getElementById('numQuestions').value;
+            const temperature = document.getElementById('temperature').value;
+            const maxLength = document.getElementById('maxLength').value;
+            
+            if (!context.trim()) {
+                showError('Please enter some text first');
+                return;
+            }
+
+            document.getElementById('loadingSpinner').classList.remove('hidden');
+            document.getElementById('results').classList.add('hidden');
+            document.getElementById('error').classList.add('hidden');
+
+            try {
+                const response = await fetch('/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        context,
+                        num_questions: numQuestions,
+                        temperature: parseFloat(temperature),
+                        max_length: parseInt(maxLength)
+                    }),
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    displayQAPairs(data.qa_pairs);
+                } else {
+                    showError(data.error);
+                }
+            } catch (error) {
+                showError('An error occurred while generating questions');
+            } finally {
+                document.getElementById('loadingSpinner').classList.add('hidden');
+            }
+        });
+
+        function displayQAPairs(qaPairs) {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '';
+            
+            qaPairs.forEach((pair, index) => {
+                const qaCard = document.createElement('div');
+                qaCard.className = 'question-card';
+                qaCard.style.animationDelay = `${index * 0.1}s`;
+                
+                qaCard.innerHTML = `
+                    <div class="question-header p-4 cursor-pointer flex items-center justify-between">
+                        <div class="flex-1">
+                            <span class="text-indigo-400 font-semibold mr-2">Q${index + 1}:</span>
+                            <span class="text-white">${pair.question}</span>
+                        </div>
+                        <i class="fas fa-chevron-down text-indigo-400 transform transition-transform duration-300"></i>
+                    </div>
+                    <div class="answer-content">
+                        <p class="text-indigo-200 leading-relaxed">${pair.answer}</p>
+                    </div>
+                `;
+
+                resultsDiv.appendChild(qaCard);
+
+                const header = qaCard.querySelector('.question-header');
+                const content = qaCard.querySelector('.answer-content');
+                const icon = qaCard.querySelector('.fa-chevron-down');
+
+                header.addEventListener('click', () => {
+                    content.classList.toggle('show');
+                    icon.style.transform = content.classList.contains('show') ? 'rotate(180deg)' : '';
+                });
+            });
+
+            resultsDiv.classList.remove('hidden');
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.classList.remove('hidden');
+        }
+
+        const temperatureInput = document.getElementById('temperature');
+        temperatureInput.addEventListener('input', (e) => {
+            const value = parseFloat(e.target.value).toFixed(1);
+            e.target.nextElementSibling.textContent = value;
+        });
+
+        // Add input animation effects
+        document.querySelectorAll('.input-field').forEach(input => {
+            input.addEventListener('focus', () => {
+                input.classList.add('animate__animated', 'animate__pulse');
+            });
+            
+            input.addEventListener('animationend', () => {
+                input.classList.remove('animate__animated', 'animate__pulse');
+            });
+        });
+    </script>
+</body>
+</html>
