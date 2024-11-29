@@ -47,7 +47,7 @@ Ensure you have the following installed:
 
 ## File Structure
 - `app.py`: Main application script.
-- `model.ipynb`: Jupyter notebook for training and experimentation.
+- `Para2Ques.ipynb`: Jupyter notebook for training and experimentation.
 - `templates/`: Contains HTML templates for the web interface.
 - `squad_data/`: JSON dataset used for training the model.
 
